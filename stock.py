@@ -29,7 +29,6 @@ class Stock:
 
     def __init__(self, name: str, test_csv_path: str, train_csv_path: str):
         self.name = name
-        pd.set_option('display.max_rows', None)
         test_df = pd.DataFrame(pd.read_csv(test_csv_path))
         train_df = pd.DataFrame(pd.read_csv(train_csv_path))
 
@@ -51,21 +50,20 @@ class Stock:
         if self.count > 0:
             return amount
         sql = 'Date == "%s"' % date
-        self.cost_price = float(Decimal(self.__df.query(sql)['Low'].values[0]).quantize(Decimal('0.00')))
+        self.cost_price = self.__df.query(sql)['Low'].values[0]
         self.count = int(amount / self.cost_price)
-        self.market_value = float(Decimal(self.count * self.cost_price).quantize(Decimal('0.00')))
+        self.market_value = self.count * self.cost_price
         self.income = 0.00
         return amount - self.market_value
 
     def sell(self, date: str) -> float:
         if self.count <= 0:
+            # print('当前日期 %s, %s 的持股数小于等于0，不交易' % (date, self.name))
             return 0.00
         sql = 'Date == "%s"' % date
-        price = float(Decimal(self.__df.query(sql)['High'].values[0]).quantize(Decimal('0.00')))
-        self.income = float(Decimal(self.count * (price - self.cost_price)).quantize(Decimal('0.00')))
-        self.cost_price = 0.00
+        price = self.__df.query(sql)['High'].values[0]
+        self.income = self.count * (price - self.cost_price)
         self.count = 0
-        self.market_value = 0.00
         return self.income
 
     def is_golden_cross_date(self, target_date: str):
